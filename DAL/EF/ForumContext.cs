@@ -11,6 +11,10 @@ namespace DAL.EF
     {
         public DbSet<Theme> Themes { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<Hashtag> Hashtags { get; set; }
+        public DbSet<ReportMessage> ReportMessages { get; set; }
+        public DbSet<ReportTheme> ReportThemes { get; set; }
+        public DbSet<ThemeHashtag> ThemeHashtags { get; set; }
 
 
         public ForumContext(DbContextOptions options) : base(options)
@@ -23,7 +27,7 @@ namespace DAL.EF
         {
             base.OnModelCreating(modelBuilder);
 
-            //modelBuilder.Entity<ThemeHashtag>().HasKey(th => new { th.ThemeId, th.HashtagId });
+            modelBuilder.Entity<ThemeHashtag>().HasKey(th => new { th.ThemeId, th.HashtagId });
 
 
         }
