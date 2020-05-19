@@ -11,7 +11,8 @@ namespace DAL.Entities
         public string Text { get; set; }
         public DateTime DateTime { get; set; }
         public int? AuthorId { get; set; }
-        public User Author { get; set; }
+        public virtual User Author { get; set; }
         public virtual IEnumerable<Message> Messages { get; set; }
+        public virtual IEnumerable<ThemeModer> ThemeModers { get; set; }
     }
 }

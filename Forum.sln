@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PL", "PL\PL.csproj", "{D285F025-ABF2-4088-9CFE-3CC014E28583}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PL", "PL\PL.csproj", "{D285F025-ABF2-4088-9CFE-3CC014E28583}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL", "DAL\DAL.csproj", "{F65AC8B5-3523-4AE1-A889-C5A380F43EEA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DAL", "DAL\DAL.csproj", "{F65AC8B5-3523-4AE1-A889-C5A380F43EEA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLL", "BLL\BLL.csproj", "{FB8A5E7A-3CFF-42EE-80C8-0E8668F82559}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{F65AC8B5-3523-4AE1-A889-C5A380F43EEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F65AC8B5-3523-4AE1-A889-C5A380F43EEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F65AC8B5-3523-4AE1-A889-C5A380F43EEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB8A5E7A-3CFF-42EE-80C8-0E8668F82559}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB8A5E7A-3CFF-42EE-80C8-0E8668F82559}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB8A5E7A-3CFF-42EE-80C8-0E8668F82559}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB8A5E7A-3CFF-42EE-80C8-0E8668F82559}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -15,12 +15,18 @@ namespace DAL.EF
         public DbSet<ReportMessage> ReportMessages { get; set; }
         public DbSet<ReportTheme> ReportThemes { get; set; }
         public DbSet<ThemeHashtag> ThemeHashtags { get; set; }
+        public DbSet<ThemeModer> ThemeModers { get; set; }
+
 
 
         public ForumContext(DbContextOptions options) : base(options)
         {
-            Database.EnsureDeleted();
-            Database.EnsureCreated();
+            
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            //optionsBuilder.UseLazyLoadingProxies();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -28,7 +34,7 @@ namespace DAL.EF
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<ThemeHashtag>().HasKey(th => new { th.ThemeId, th.HashtagId });
-
+            modelBuilder.Entity<ThemeModer>().HasKey(tm => new { tm.ThemeId, tm.ModeratorId });
 
         }
     }

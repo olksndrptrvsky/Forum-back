@@ -21,10 +21,11 @@ namespace DAL.Repositories
             _dbSet = _db.Set<TEntity>();
         }
 
-        public TEntity CreateAsync(TEntity item)
+        public async Task<TEntity> CreateAsync(TEntity item)
         {
-            _dbSet.AddAsync(item);
-            return item;
+            var result = await _dbSet.AddAsync(item);
+           
+            return result.Entity;
         }
 
         public void Delete(int id)
@@ -41,14 +42,14 @@ namespace DAL.Repositories
             return _dbSet.FindAsync(id);
         }
 
-        public async Task<IEnumerable<TEntity>> GetAllAsync()
+        public IQueryable<TEntity> GetAll()
         {
-            return await _dbSet.AsNoTracking().ToListAsync();
+            return _dbSet.AsNoTracking();
         }
 
-        public async Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> predicate)
+        public IQueryable<TEntity> GetAll(Expression<Func<TEntity, bool>> predicate)
         {
-            return await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
+            return _dbSet.AsNoTracking().Where(predicate);
         }
 
         public void Update(TEntity item)
