@@ -16,8 +16,11 @@ namespace BLL.Interfaces
         Task<ThemeDTO> CreateAsync(ThemeDTO themeDTO, int authorId);
 
 
+        IEnumerable<ThemeListItemDTO> GetThemesByHashtag(string hashtag, int pagingNumber, int pagingSize);
 
+        IEnumerable<ThemeListItemDTO> GetThemesWithoutModers(int pagingNumber, int pagingSize);
 
-        IEnumerable<ThemeListItemDTO> GetThemesByHashtag(int pagingNumber, int pagingSize);
+        void ReportTheme(ReportDTO report);
+
     }
 }

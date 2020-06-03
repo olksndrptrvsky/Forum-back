@@ -16,6 +16,9 @@ namespace DAL.Repositories
         private IRepository<Message> _messages;
         private IRepository<ReportMessage> _reportMessages;
         private IRepository<ReportTheme> _reportThemes;
+        private IRepository<ThemeModer> _themeModers;
+        
+
 
         public IRepository<Theme> Themes => _themes ?? new Repository<Theme>(_db);
         public IRepository<Hashtag> Hashtags => _hashtags ?? new Repository<Hashtag>(_db);
@@ -23,6 +26,7 @@ namespace DAL.Repositories
         public IRepository<Message> Messages => _messages ?? new Repository<Message>(_db);
         public IRepository<ReportMessage> ReportMessages => _reportMessages ?? new Repository<ReportMessage>(_db);
         public IRepository<ReportTheme> ReportThemes => _reportThemes ?? new Repository<ReportTheme>(_db);
+        public IRepository<ThemeModer> ThemeModers => _themeModers ?? new Repository<ThemeModer>(_db);
 
 
         public UnitOfWork(ForumContext productContext)

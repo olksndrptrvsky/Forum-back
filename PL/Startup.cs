@@ -27,6 +27,8 @@ namespace PL
         }
 
         public IConfiguration Configuration { get; }
+        public static readonly ILoggerFactory MyLoggerFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
+
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -34,7 +36,7 @@ namespace PL
             services.AddControllers();
 
 
-            services.AddForumServices(Configuration);
+            services.AddForumServices(Configuration, MyLoggerFactory);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

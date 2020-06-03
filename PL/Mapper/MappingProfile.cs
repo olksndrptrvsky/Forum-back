@@ -28,6 +28,15 @@ namespace PL.Mapper
             CreateMap<User, UserDTO>();
 
             CreateMap<CreateThemeVM, ThemeDTO>();
+
+            CreateMap<ReportVM, ReportDTO>();
+
+            CreateMap<ReportDTO, ReportTheme>()
+                .ForMember(reportTheme => reportTheme.ThemeId, opt => opt.MapFrom(dto => dto.EntityId));
+            CreateMap<ReportDTO, ReportMessage>()
+                .ForMember(reportMessage => reportMessage.MessageId, opt => opt.MapFrom(dto => dto.EntityId));
+
+
         }
     }
 }

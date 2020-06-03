@@ -12,13 +12,13 @@ using AutoMapper;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System;
-
+using Microsoft.Extensions.Logging;
 
 namespace PL.Extensions
 {
     public static class ForumServicesExtension
     {
-        public static void AddForumServices(this IServiceCollection services, IConfiguration config)
+        public static void AddForumServices(this IServiceCollection services, IConfiguration config, ILoggerFactory myLoggerFactory)
         {
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -48,10 +48,12 @@ namespace PL.Extensions
                 options.Password.RequiredLength = 1;
                 options.Password.RequiredUniqueChars = 1;
                 options.User.RequireUniqueEmail = true;
+                
             });
 
 
-            services.AddDbContext<ForumContext>(opt => opt.UseSqlServer(config.GetConnectionString("Forum")));
+            services.AddDbContext<ForumContext>(opt => 
+                opt.UseLoggerFactory(myLoggerFactory).UseSqlServer(config.GetConnectionString("Forum")));
             services.AddIdentity<User, Role>().AddEntityFrameworkStores<ForumContext>();
 
 

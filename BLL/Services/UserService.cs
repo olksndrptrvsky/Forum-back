@@ -85,5 +85,13 @@ namespace BLL.Services
             User user = new User() { UserName = userName, Email = email };
             return userManager.CreateAsync(user, password).Result;
         }
+
+
+        public async Task<IEnumerable<string>> GetAllModers()
+        {
+            return (await userManager.GetUsersInRoleAsync("Moderator")).Select(u => u.UserName).ToList();
+        }
+
+
     }
 }

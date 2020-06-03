@@ -10,7 +10,9 @@ namespace BLL.Interfaces
     public interface IUserService
     {
         Task<UserDTO> LogIn(string userName, string password, string key);
-
         IdentityResult Register(string userName, string email, string password);
+        Task<IEnumerable<string>> GetAllModers();
+
+        
     }
 }

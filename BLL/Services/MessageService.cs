@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 
@@ -24,8 +25,10 @@ namespace BLL.Services
 
         public IEnumerable<Message> GetMessagesInTheme(int themeId, int pagingNumber, int pagingSize)
         {
-            return unitOfWork.Messages.GetAll(mes => mes.ThemeId == themeId && mes.ReplyMessageId == null).Include(mes => mes.Author).
-                Skip((pagingNumber - 1) * pagingSize).Take(pagingSize).ToList();
+            var res = unitOfWork.Messages.GetAll(mes => mes.ThemeId == themeId && mes.ReplyMessageId == null).Include(mes => mes.Author).
+                Skip((pagingNumber - 1) * pagingSize).Take(pagingSize);
+            
+            return res.ToList();
         }
 
         public IEnumerable<MessagesPerEntity> GetMessagesPerTheme()
@@ -42,8 +45,13 @@ namespace BLL.Services
 
         public int GetMessageCountForUser(int userId)
         {
-            return unitOfWork.Messages.GetAll(mes => mes.AuthorId == userId).Include(mes => mes.Author).Count();
+            return unitOfWork.Messages.GetAll(mes => mes.AuthorId == userId).Count();
         }
-        
+
+        public int GetMessageCountInTheme(int themeId)
+        {
+            return unitOfWork.Messages.GetAll(mes => mes.ThemeId == themeId).Count();
+        }
+
     }
 }

@@ -14,5 +14,7 @@ namespace BLL.Interfaces
         IEnumerable<Message> GetMessagesInTheme(int themeId, int pagingNumber, int pagingSize);
 
         int GetMessageCountForUser(int userId);
+
+        
     }
 }

@@ -5,10 +5,9 @@ using System.Threading.Tasks;
 
 namespace PL.ViewModels
 {
-    public class CreateThemeVM
+    public class ReportVM
     {
-        public string Title { get; set; }
+        public int EntityId { get; set; }
         public string Text { get; set; }
-        public IEnumerable<string> Hashtags { get; set; }
     }
 }

@@ -11,6 +11,7 @@ namespace BLL.DTO
         public string Text { get; set; }
         public DateTime DateTime { get; set; }
         public string AuthorUsername { get; set; }
+        public IEnumerable<string> Hashtags { get; set; }
         public int MessageCount { get; set; }
     }
 }

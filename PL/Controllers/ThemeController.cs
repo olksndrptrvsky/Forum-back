@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PL.ViewModels;
+using System.Net;
+using DAL.Entities;
 
 namespace PL.Controllers
 {
@@ -58,5 +60,19 @@ namespace PL.Controllers
                 Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value));
             return CreatedAtAction(nameof(GetTheme), new { id = createdTheme.Id }, createdTheme);
         }
+
+        [HttpGet("hashtag/{pagingNumber}")]
+        public IEnumerable<ThemeListItemDTO> GetThemesByHashtag([FromBody]string hashtag, int pagingNumber)
+        {
+            return themeService.GetThemesByHashtag(hashtag, pagingNumber, Convert.ToInt32(config["Paging:Size"]));
+        }
+
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("unmoderated/{pageNumber}")]
+        public IEnumerable<ThemeListItemDTO> GetUnmoderatedThemes(int pageNumber)
+        {
+            return themeService.GetThemesWithoutModers(pageNumber, Convert.ToInt32(config["Paging:Size"]));
+        }
+
     }
 }
