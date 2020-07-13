@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BLL.DTO;
 using BLL.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace PL.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<UserDTO>> Login(UserLoginVM userLoginVM)
+        public async Task<ActionResult<UserDTO>> Login([FromBody]UserLoginVM userLoginVM)
         {
             var user = await userService.LogIn(userLoginVM.UserName, userLoginVM.Password, config["Jwt:Key"]);
             if (user == null)
@@ -47,7 +48,12 @@ namespace PL.Controllers
             return BadRequest(result);
         }
 
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("moders")]
+        public async Task<ActionResult<IEnumerable<string>>> GetModers()
+        {
+            return (await userService.GetAllModers()).ToList();
+        }
 
-        
     }
 }

@@ -83,14 +83,22 @@ namespace BLL.Services
         public IdentityResult Register(string userName, string email, string password)
         {
             User user = new User() { UserName = userName, Email = email };
-            return userManager.CreateAsync(user, password).Result;
+            var result = userManager.CreateAsync(user, password).Result;
+            if (result.Succeeded)
+            {
+                userManager.AddToRoleAsync(user, "User");
+            }
+            return result;
         }
 
-
+        
         public async Task<IEnumerable<string>> GetAllModers()
         {
             return (await userManager.GetUsersInRoleAsync("Moderator")).Select(u => u.UserName).ToList();
         }
+
+
+
 
 
     }

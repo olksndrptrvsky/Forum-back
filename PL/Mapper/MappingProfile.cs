@@ -36,6 +36,9 @@ namespace PL.Mapper
             CreateMap<ReportDTO, ReportMessage>()
                 .ForMember(reportMessage => reportMessage.MessageId, opt => opt.MapFrom(dto => dto.EntityId));
 
+            CreateMap<ThemeModerVM, ThemeModerDTO>();
+
+            CreateMap<ThemeModerDTO, ThemeModer>();
 
         }
     }

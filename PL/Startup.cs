@@ -14,7 +14,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OLAPWebApiCore_01.Extensions;
 using PL.Extensions;
 
 namespace PL
@@ -40,9 +39,9 @@ namespace PL
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
-            UserManager<User> userManager, RoleManager<Role> roleManager)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            env.EnvironmentName = "Production";
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -54,7 +53,6 @@ namespace PL
 
             app.UseAuthentication();
 
-            app.SeedIdentityData(userManager, roleManager);
 
             app.UseHttpsRedirection();
 

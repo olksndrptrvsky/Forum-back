@@ -32,7 +32,7 @@ namespace PL.Controllers
         }
 
         [HttpGet("latest/{pagingNumber}")]
-        public IEnumerable<ThemeListItemDTO> GetLatestThemes(int pagingNumber)
+        public IEnumerable<ThemeListItemDTO> GetLatestThemes(int pagingNumber, string search)
         {
             var result = themeService.GetLatestThemes(pagingNumber, Convert.ToInt32(config["Paging:Size"]));
             return result;
@@ -44,6 +44,19 @@ namespace PL.Controllers
             var result = themeService.GetPopularThemes(pagingNumber, Convert.ToInt32(config["Paging:Size"]));
             return result;
         }
+
+
+        [HttpGet("search/{pagingNumber}")]
+        public ActionResult<IEnumerable<ThemeListItemDTO>> SearchThemes(string search, int pagingNumber)
+        {
+            if (search == null)
+            {
+                return BadRequest();
+            }
+            var result = themeService.SearchThemes(search, pagingNumber, Convert.ToInt32(config["Paging:Size"]));
+            return Ok(result);
+        }
+
 
         [HttpGet("{id}")]
         public ThemeDTO GetTheme(int id)
@@ -61,17 +74,34 @@ namespace PL.Controllers
             return CreatedAtAction(nameof(GetTheme), new { id = createdTheme.Id }, createdTheme);
         }
 
-        [HttpGet("hashtag/{pagingNumber}")]
-        public IEnumerable<ThemeListItemDTO> GetThemesByHashtag([FromBody]string hashtag, int pagingNumber)
-        {
-            return themeService.GetThemesByHashtag(hashtag, pagingNumber, Convert.ToInt32(config["Paging:Size"]));
-        }
+        
 
         [Authorize(Roles = "Administrator")]
         [HttpGet("unmoderated/{pageNumber}")]
         public IEnumerable<ThemeListItemDTO> GetUnmoderatedThemes(int pageNumber)
         {
             return themeService.GetThemesWithoutModers(pageNumber, Convert.ToInt32(config["Paging:Size"]));
+        }
+
+        [Authorize(Roles = "Administrator")]
+        [HttpPost("moder")]
+        public IActionResult AddModerToTheme(ThemeModerVM themeModerVM)
+        {
+            themeService.AddModerToTheme(mapper.Map<ThemeModerDTO>(themeModerVM));
+            return NoContent();
+        }
+
+
+        [Authorize(Roles = "Moderator, User")]
+        [HttpDelete("{id}")]
+        public IActionResult DeleteTheme(int id)
+        {
+            if (themeService.UserCanDeleteTheme(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value), id))
+            {
+                themeService.DeleteTheme(id);
+                return NoContent();
+            }
+            return Unauthorized();
         }
 
     }

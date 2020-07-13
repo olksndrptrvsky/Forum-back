@@ -8,5 +8,6 @@ namespace DAL.Entities
     {
         public int ThemeId { get; set; }
         public int HashtagId { get; set; }
+        public virtual Hashtag Hashtag { get; set; }
     }
 }

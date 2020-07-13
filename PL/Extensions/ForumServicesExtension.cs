@@ -48,7 +48,6 @@ namespace PL.Extensions
                 options.Password.RequiredLength = 1;
                 options.Password.RequiredUniqueChars = 1;
                 options.User.RequireUniqueEmail = true;
-                
             });
 
 

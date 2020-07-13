@@ -38,5 +38,14 @@ namespace PL.Controllers
             themeService.ReportTheme(reportDTO);
             return NoContent();
         }
+
+        [HttpPost("message")]
+        public IActionResult ReportMessage(ReportVM report)
+        {
+            var reportDTO = mapper.Map<ReportDTO>(report);
+            reportDTO.ReporterId = Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            messageService.ReportMessage(reportDTO);
+            return NoContent();
+        }
     }
 }

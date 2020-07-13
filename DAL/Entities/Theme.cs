@@ -14,5 +14,6 @@ namespace DAL.Entities
         public virtual User Author { get; set; }
         public virtual IEnumerable<Message> Messages { get; set; }
         public virtual IEnumerable<ThemeModer> ThemeModers { get; set; }
+        public virtual IEnumerable<ThemeHashtag> ThemeHashtags { get; set; }
     }
 }

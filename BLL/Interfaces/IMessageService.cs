@@ -15,6 +15,12 @@ namespace BLL.Interfaces
 
         int GetMessageCountForUser(int userId);
 
-        
+        void ReportMessage(ReportDTO report);
+
+        bool UserCanDeleteMessage(int userId, int messageId);
+
+
+        void DeleteMessage(int id);
+
     }
 }

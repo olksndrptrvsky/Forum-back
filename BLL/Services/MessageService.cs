@@ -1,4 +1,5 @@
-﻿using BLL.DTO;
+﻿using AutoMapper;
+using BLL.DTO;
 using BLL.Interfaces;
 using DAL.Entities;
 using DAL.Interfaces;
@@ -16,11 +17,13 @@ namespace BLL.Services
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly UserManager<User> userManager;
+        private readonly IMapper mapper;
 
-        public MessageService(IUnitOfWork unitOfWork, UserManager<User> userManager)
+        public MessageService(IUnitOfWork unitOfWork, UserManager<User> userManager, IMapper mapper)
         {
             this.unitOfWork = unitOfWork;
             this.userManager = userManager;
+            this.mapper = mapper;
         }
 
         public IEnumerable<Message> GetMessagesInTheme(int themeId, int pagingNumber, int pagingSize)
@@ -53,5 +56,34 @@ namespace BLL.Services
             return unitOfWork.Messages.GetAll(mes => mes.ThemeId == themeId).Count();
         }
 
+        public async void ReportMessage(ReportDTO report)
+        {
+            var reportMessage = mapper.Map<ReportMessage>(report);
+
+            await unitOfWork.ReportMessages.CreateAsync(reportMessage);
+
+            unitOfWork.SaveAsync().Wait();
+        }
+
+
+        public bool UserCanDeleteMessage(int userId, int messageId)
+        {
+            var message = unitOfWork.Messages.GetAll(m => m.Id == messageId).FirstOrDefault();
+
+            return message?.AuthorId == userId ||
+                unitOfWork.ThemeModers.GetAll(tm => tm.ThemeId == message.ThemeId && tm.ModeratorId == userId).Any();
+        }
+
+
+        public void DeleteMessage(int id)
+        {
+            //delete replies
+            foreach(var replyMessageId in unitOfWork.Messages.GetAll(m => m.ReplyMessageId == id).Select(m => m.Id))
+            {
+                unitOfWork.Messages.Delete(replyMessageId);
+            }
+            unitOfWork.Messages.Delete(id);
+            unitOfWork.SaveAsync().Wait();
+        }
     }
 }

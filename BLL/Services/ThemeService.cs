@@ -1,12 +1,15 @@
 ﻿using AutoMapper;
 using BLL.DTO;
 using BLL.Interfaces;
+using System.Linq.Expressions;
 using DAL.Entities;
 using DAL.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace BLL.Services
@@ -16,12 +19,14 @@ namespace BLL.Services
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
         private readonly IMessageService messageService;
+        private readonly UserManager<User> userManager;
 
-        public ThemeService(IUnitOfWork unitOfWork, IMapper mapper, IMessageService messageService)
+        public ThemeService(IUnitOfWork unitOfWork, IMapper mapper, IMessageService messageService, UserManager<User> userManager)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
             this.messageService = messageService;
+            this.userManager = userManager;
         }
 
         public IEnumerable<ThemeListItemDTO> GetLatestThemes(int pagingNumber, int pagingSize)
@@ -143,7 +148,7 @@ namespace BLL.Services
         }
 
 
-        public IEnumerable<ThemeListItemDTO> SearchByTitle(string query, int pagingNumber, int pagingSize)
+        private IEnumerable<ThemeListItemDTO> SearchByTitle(string query, int pagingNumber, int pagingSize)
         {
             var themes = unitOfWork.Themes.GetAll(t => t.Title.StartsWith(query))
                 .Concat(unitOfWork.Themes.GetAll(t => t.Title.Contains(query))).Distinct();
@@ -156,8 +161,116 @@ namespace BLL.Services
         {
             var reportTheme = mapper.Map<ReportTheme>(report);
 
-            return await unitOfWork.;
+            await unitOfWork.ReportThemes.CreateAsync(reportTheme);
+
+            unitOfWork.SaveAsync().Wait();
         }
+
+        public void AddModerToTheme(ThemeModerDTO themeModerDTO)
+        {
+            var moder = userManager.FindByNameAsync(themeModerDTO.ModerUsername).Result;
+            var themeModer = mapper.Map<ThemeModer>(themeModerDTO);
+
+            if (moder == null)
+            {
+                throw new ArgumentException($"There is no user with username {themeModerDTO.ModerUsername}");
+            }
+            themeModer.ModeratorId = moder.Id;
+
+            unitOfWork.ThemeModers.CreateAsync(themeModer);
+
+            unitOfWork.SaveAsync().Wait();
+        }
+
+
+       public bool UserCanDeleteTheme(int userId, int themeId)
+       {
+            return unitOfWork.ThemeModers.GetAll(tm => tm.ModeratorId == userId && tm.ThemeId == themeId).Any() ||
+                unitOfWork.Themes.GetAll(t => t.Id == themeId && t.AuthorId == userId).Any();
+       }
+
+
+
+
+        public void DeleteTheme(int id)
+        {
+            unitOfWork.Themes.Delete(id);
+            unitOfWork.SaveAsync().Wait();
+        }
+
+        public IEnumerable<ThemeListItemDTO> SearchThemes(string search, int pagingNumber, int pagingSize)
+        {
+            Regex regexHashtag = new Regex(@"\[(\w*[#\-\.]*)*\]");
+
+            MatchCollection matches = regexHashtag.Matches(search);
+            var searchStrings = regexHashtag.Split(search).Where(str => !string.IsNullOrEmpty(str)).ToList();
+
+            searchStrings.ForEach((string s) => s = s.Trim());
+
+            var hashtags = new List<string>();
+            foreach (Match match in matches)
+            {
+                hashtags.Add(match.Value.Trim(new char[] { '[', ']' }));
+            }
+
+            IQueryable<Theme> query = unitOfWork.Themes.GetAll().Include(t => t.ThemeHashtags).ThenInclude(th => th.Hashtag);
+            //IEnumerable<Theme> result = query.ToList();
+
+            foreach (var hashtag in hashtags)
+            {
+                //result = result.Where(t => t.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag));
+
+                query = query.Where(t => t.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag));
+            }
+
+            //var hashtag1 = hashtags[0];
+            //foreach (var theme in result.Where(t => t.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag1)))
+            //{
+
+            //    if (theme.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag1))
+            //    {
+
+            //    }
+            //}
+
+            //query.Where(GenerateSearchExpression(searchStrings)).ToList();
+
+            //query;
+
+            return CreateThemeListItemDTOs(query).ToList();
+        }
+
+
+        private Expression<Func<Theme, bool>> GenerateSearchExpression(IEnumerable<string> searchStrings)
+        {
+            var theme = Expression.Parameter(typeof(Theme), "theme");
+
+
+            //Expression expression;
+            Expression conditionExpression = Expression.Constant(false);
+
+
+            foreach (var searchString in searchStrings)
+            {
+                var themeTitle = Expression.Property(theme, typeof(Theme).GetProperty("Title"));
+                var themeDesc = Expression.Property(theme, typeof(Theme).GetProperty("Description"));
+
+                var titleCall = Expression.Call(themeTitle, typeof(string).GetMethod("Contains"), Expression.Constant(searchString));
+                var descCall = Expression.Call(themeDesc, typeof(string).GetMethod("Contains"), Expression.Constant(searchString));
+
+                UnaryExpression textInTitleExpression = Expression.IsTrue(titleCall);
+                conditionExpression = Expression.Or(conditionExpression, textInTitleExpression);
+
+                UnaryExpression textInDescExpression = Expression.IsTrue(descCall);
+                conditionExpression = Expression.Or(conditionExpression, textInDescExpression);
+            }
+
+
+            return Expression.Lambda<Func<Theme, bool>>(conditionExpression, new ParameterExpression[] { theme });
+
+        }
+
+
 
     }
 }
