@@ -205,37 +205,29 @@ namespace BLL.Services
             MatchCollection matches = regexHashtag.Matches(search);
             var searchStrings = regexHashtag.Split(search).Where(str => !string.IsNullOrEmpty(str)).ToList();
 
+            //get all search strings
             searchStrings.ForEach((string s) => s = s.Trim());
 
+            //and hashtags from input
             var hashtags = new List<string>();
             foreach (Match match in matches)
             {
                 hashtags.Add(match.Value.Trim(new char[] { '[', ']' }));
             }
 
-            IQueryable<Theme> query = unitOfWork.Themes.GetAll().Include(t => t.ThemeHashtags).ThenInclude(th => th.Hashtag);
-            //IEnumerable<Theme> result = query.ToList();
-
+            //creating query
+            IQueryable<Theme> query = unitOfWork.Themes.GetAll().Include(t => t.ThemeHashtags).ThenInclude(th => th.Hashtag);            
             foreach (var hashtag in hashtags)
             {
-                //result = result.Where(t => t.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag));
-
                 query = query.Where(t => t.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag));
             }
 
-            //var hashtag1 = hashtags[0];
-            //foreach (var theme in result.Where(t => t.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag1)))
-            //{
 
-            //    if (theme.ThemeHashtags.Any(th => th.Hashtag.Text == hashtag1))
-            //    {
+            if (searchStrings.Count > 0)
+            {
+                query = query.Where(GenerateSearchExpression(searchStrings));
 
-            //    }
-            //}
-
-            //query.Where(GenerateSearchExpression(searchStrings)).ToList();
-
-            //query;
+            }
 
             return CreateThemeListItemDTOs(query).ToList();
         }
@@ -246,28 +238,33 @@ namespace BLL.Services
             var theme = Expression.Parameter(typeof(Theme), "theme");
 
 
-            //Expression expression;
-            Expression conditionExpression = Expression.Constant(false);
+            //Func<Theme, bool> del = theme => 
+            //{
+            //    var result = false;
+            //    foreach (var searchString in searchStrings)
+            //    {
+            //        result = result || theme.Title.Contains(searchString) || theme.Text.Contains(searchString);
+            //    }
+            //    return result;
+            //};
 
+
+            Expression result = Expression.Constant(false);
+
+            Expression title = Expression.Property(theme, "Title");
+            Expression text = Expression.Property(theme, "Text");
 
             foreach (var searchString in searchStrings)
             {
-                var themeTitle = Expression.Property(theme, typeof(Theme).GetProperty("Title"));
-                var themeDesc = Expression.Property(theme, typeof(Theme).GetProperty("Description"));
+                result = Expression.Or(result, Expression.Call(title, typeof(string).GetMethod("Contains", new Type[] { typeof(string) }),
+                    Expression.Constant(searchString)));
+                result = Expression.Or(result, Expression.Call(text, typeof(string).GetMethod("Contains", new Type[] { typeof(string) }),
+                                        Expression.Constant(searchString)));
 
-                var titleCall = Expression.Call(themeTitle, typeof(string).GetMethod("Contains"), Expression.Constant(searchString));
-                var descCall = Expression.Call(themeDesc, typeof(string).GetMethod("Contains"), Expression.Constant(searchString));
-
-                UnaryExpression textInTitleExpression = Expression.IsTrue(titleCall);
-                conditionExpression = Expression.Or(conditionExpression, textInTitleExpression);
-
-                UnaryExpression textInDescExpression = Expression.IsTrue(descCall);
-                conditionExpression = Expression.Or(conditionExpression, textInDescExpression);
             }
 
 
-            return Expression.Lambda<Func<Theme, bool>>(conditionExpression, new ParameterExpression[] { theme });
-
+            return Expression.Lambda<Func<Theme, bool>>(result, new ParameterExpression[] { theme });
         }
 
 
