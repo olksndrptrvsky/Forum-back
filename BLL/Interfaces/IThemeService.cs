@@ -11,7 +11,7 @@ namespace BLL.Interfaces
         IEnumerable<ThemeListItemDTO> GetPopularThemes(int pagingNumber, int pagingSize);
         IEnumerable<ThemeListItemDTO> GetLatestThemes(int pagingNumber, int pagingSize);
 
-        ThemeDTO GetThemeById(int id, int pagingSize);
+        ThemeDTO GetThemeById(int id);
 
         Task<ThemeDTO> CreateAsync(ThemeDTO themeDTO, int authorId);
 

@@ -12,6 +12,5 @@ namespace BLL.DTO
         public DateTime DateTime { get; set; }
         public AuthorDTO Author { get; set; }
         public IEnumerable<string> Hashtags { get; set; }
-        public IEnumerable<MessageDTO> Messages { get; set; } 
     }
 }

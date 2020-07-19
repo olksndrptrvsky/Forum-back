@@ -37,6 +37,7 @@ namespace BLL.Services
             return CreateThemeListItemDTOs(themes);
         }
         
+        //rework 
         public IEnumerable<ThemeListItemDTO> GetPopularThemes(int pagingNumber, int pagingSize)
         {
             var themes = unitOfWork.Themes.GetAll();
@@ -45,21 +46,12 @@ namespace BLL.Services
                 .Skip((pagingNumber - 1) * pagingSize).Take(pagingSize).ToList();
         }
 
-        public ThemeDTO GetThemeById(int themeId, int pagingSize)
+        public ThemeDTO GetThemeById(int themeId)
         {
-            var messages = messageService.GetMessagesInTheme(themeId, 1, pagingSize);
             var theme = unitOfWork.Themes.GetAll(th => th.Id == themeId).Include(th => th.Author).First();
             var themeDTO = mapper.Map<ThemeDTO>(theme);
-            themeDTO.Messages = mapper.Map<IEnumerable<MessageDTO>>(messages);
-
-            var messagesPerUser = messageService.GetMessagesPerUser();
-
-            foreach (var msg in themeDTO.Messages)
-            {
-                msg.Author.MessageCount = messagesPerUser.Where(mpu => mpu.EntityId == msg.Author.Id).First().MessageCount;
-            }
-
-            themeDTO.Author.MessageCount = messagesPerUser.Where(mpu => mpu.EntityId == theme.AuthorId).First().MessageCount;
+           
+            themeDTO.Author.MessageCount = messageService.GetMessageCountForUser(themeDTO.Author.Id);
             themeDTO.Hashtags = unitOfWork.ThemeHashtags.GetAll(th => th.ThemeId == themeDTO.Id).
                    Join(unitOfWork.Hashtags.GetAll(), th => th.HashtagId, h => h.Id, (th, h) => h.Text);
 
@@ -102,9 +94,6 @@ namespace BLL.Services
             
             return createdthemeDTO;
         }
-
-
-
 
         
         public IEnumerable<ThemeListItemDTO> GetThemesByHashtag(string hashtagText, int pagingNumber, int pagingSize)

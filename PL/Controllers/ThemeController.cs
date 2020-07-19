@@ -23,25 +23,27 @@ namespace PL.Controllers
         private readonly IThemeService themeService;
         private readonly IConfiguration config;
         private readonly IMapper mapper;
+        private readonly int pageSize;
 
         public ThemeController(IThemeService themeService, IConfiguration config, IMapper mapper)
         {
             this.themeService = themeService;
             this.config = config;
             this.mapper = mapper;
+            pageSize = Convert.ToInt32(config["Paging:Size"]);
         }
 
         [HttpGet("latest/{pagingNumber}")]
         public IEnumerable<ThemeListItemDTO> GetLatestThemes(int pagingNumber, string search)
         {
-            var result = themeService.GetLatestThemes(pagingNumber, Convert.ToInt32(config["Paging:Size"]));
+            var result = themeService.GetLatestThemes(pagingNumber, pageSize);
             return result;
         }
 
         [HttpGet("popular/{pagingNumber}")]
         public IEnumerable<ThemeListItemDTO> GetMostPopularThemes(int pagingNumber)
         {
-            var result = themeService.GetPopularThemes(pagingNumber, Convert.ToInt32(config["Paging:Size"]));
+            var result = themeService.GetPopularThemes(pagingNumber, pageSize);
             return result;
         }
 
@@ -53,7 +55,7 @@ namespace PL.Controllers
             {
                 return BadRequest();
             }
-            var result = themeService.SearchThemes(search, pagingNumber, Convert.ToInt32(config["Paging:Size"]));
+            var result = themeService.SearchThemes(search, pagingNumber, pageSize);
             return Ok(result);
         }
 
@@ -61,7 +63,7 @@ namespace PL.Controllers
         [HttpGet("{id}")]
         public ThemeDTO GetTheme(int id)
         {
-            return themeService.GetThemeById(id, Convert.ToInt32(config["Paging:Size"]));
+            return themeService.GetThemeById(id);
         }
 
         [Authorize]
@@ -80,7 +82,7 @@ namespace PL.Controllers
         [HttpGet("unmoderated/{pageNumber}")]
         public IEnumerable<ThemeListItemDTO> GetUnmoderatedThemes(int pageNumber)
         {
-            return themeService.GetThemesWithoutModers(pageNumber, Convert.ToInt32(config["Paging:Size"]));
+            return themeService.GetThemesWithoutModers(pageNumber, pageSize);
         }
 
         [Authorize(Roles = "Administrator")]

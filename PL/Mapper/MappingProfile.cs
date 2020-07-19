@@ -24,7 +24,7 @@ namespace PL.Mapper
             CreateMap<ThemeDTO, Theme>();
 
             CreateMap<Message, MessageDTO>();
-
+               
             CreateMap<User, UserDTO>();
 
             CreateMap<CreateThemeVM, ThemeDTO>();
@@ -39,6 +39,16 @@ namespace PL.Mapper
             CreateMap<ThemeModerVM, ThemeModerDTO>();
 
             CreateMap<ThemeModerDTO, ThemeModer>();
+
+            CreateMap<MessageDTO, Message>()
+                .ForMember(mes => mes.AuthorId, opt => opt.MapFrom(dto => dto.Author.Id));
+            
+            CreateMap<CreateMessageVM, MessageDTO>();
+            
+            CreateMap<AuthorDTO, User>();
+
+            CreateMap<MessageDTO, CreateMessageVM>();
+
 
         }
     }

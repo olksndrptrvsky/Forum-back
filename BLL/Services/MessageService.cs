@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace BLL.Services
 {
@@ -26,12 +27,12 @@ namespace BLL.Services
             this.mapper = mapper;
         }
 
-        public IEnumerable<Message> GetMessagesInTheme(int themeId, int pagingNumber, int pagingSize)
+        public IEnumerable<MessageDTO> GetMessagesInTheme(int themeId, int pagingNumber, int pagingSize)
         {
-            var res = unitOfWork.Messages.GetAll(mes => mes.ThemeId == themeId && mes.ReplyMessageId == null).Include(mes => mes.Author).
+            var messages = unitOfWork.Messages.GetAll(mes => mes.ThemeId == themeId && mes.ReplyMessageId == null).Include(mes => mes.Author).
                 Skip((pagingNumber - 1) * pagingSize).Take(pagingSize);
-            
-            return res.ToList();
+
+            return CreateMessageDTOs(messages);
         }
 
         public IEnumerable<MessagesPerEntity> GetMessagesPerTheme()
@@ -45,6 +46,14 @@ namespace BLL.Services
             return userManager.Users.Include(u => u.Messages).
                 Select(u => new MessagesPerEntity { EntityId = u.Id, MessageCount = u.Messages.Count() });
         }
+
+        private IEnumerable<MessagesPerEntity> GetRepliesPerMessage()
+        {
+            return unitOfWork.Messages.GetAll(m => m.ReplyMessageId != null).GroupBy(m => m.ReplyMessageId).
+                Select(gr => new MessagesPerEntity { EntityId = gr.Key.Value, MessageCount = gr.Count() });
+        }
+
+
 
         public int GetMessageCountForUser(int userId)
         {
@@ -75,6 +84,7 @@ namespace BLL.Services
         }
 
 
+        //Check cascade
         public void DeleteMessage(int id)
         {
             //delete replies
@@ -85,5 +95,98 @@ namespace BLL.Services
             unitOfWork.Messages.Delete(id);
             unitOfWork.SaveAsync().Wait();
         }
+
+        public IEnumerable<MessageDTO> GetRepliesForMessage(int messageId, int pagingNumber, int pagingSize)
+        {
+            var replies = unitOfWork.Messages.GetAll(m => m.ReplyMessageId == messageId).
+                Skip((pagingNumber - 1) * pagingSize).Take(pagingSize);
+            return CreateMessageDTOs(replies);
+        }
+
+
+        private IEnumerable<MessageDTO> CreateMessageDTOs(IQueryable<Message> messages)
+        {
+            messages = messages.Include(m => m.Author);
+
+            var messageDTOs = mapper.Map<IEnumerable<MessageDTO>>(messages);
+
+            var messagesPerUser = GetMessagesPerUser();
+
+
+            //TODO FIRST(cond)
+            foreach(var messageDTO in messageDTOs)
+            {
+                messageDTO.Author.MessageCount = messagesPerUser.First(x => x.EntityId == messageDTO.Author.Id).MessageCount;
+            }
+
+            var repliesPerMessage = GetRepliesPerMessage();
+            foreach (var msg in messageDTOs)
+            {
+                msg.HasReplies = repliesPerMessage.FirstOrDefault(rpm => rpm.EntityId == msg.Id) != null;
+            }
+
+            return messageDTOs;
+        }
+
+
+
+
+        private MessageDTO CreateMessageDTOs(Message message)
+        {
+            if (message.Author == null)
+            {
+                var user = userManager.FindByIdAsync(message.AuthorId.ToString()).Result;
+            }
+
+            var messageDTO = mapper.Map<MessageDTO>(message);
+
+
+            messageDTO.Author.MessageCount = GetMessageCountForUser(message.AuthorId);
+
+            var repliesPerMessage = GetRepliesPerMessage();
+            messageDTO.HasReplies = repliesPerMessage.FirstOrDefault(rpm => rpm.EntityId == messageDTO.Id) != null;
+        
+            return messageDTO;
+        }
+
+
+
+        public async Task<MessageDTO> CreateAsync(MessageDTO messageDTO, int authorId)
+        {
+            var messageToCreate = mapper.Map<Message>(messageDTO);
+            messageToCreate.AuthorId = authorId;
+            messageToCreate.DateTime = DateTime.Now;
+            var createdMessage = await unitOfWork.Messages.CreateAsync(messageToCreate);
+
+            await unitOfWork.SaveAsync();
+
+            //get created message with author
+            var getCreatedMessage = unitOfWork.Messages.GetAll(m => m.Id == createdMessage.Id);
+            return CreateMessageDTOs(getCreatedMessage).First();
+        }
+
+
+        public async Task<MessageDTO> GetMessageAsync(int messageId)
+        {
+            var message = (await unitOfWork.Messages.GetByIdAsync(messageId));
+            return CreateMessageDTOs(message);
+        }
+
+
+        public async Task UpdateAsync(int id, MessageDTO messageDTO)
+        {
+            messageDTO.Id = id;
+            var message = await unitOfWork.Messages.GetByIdAsync(id);
+            message.Text = messageDTO.Text;
+            //message = mapper.Map<Message>(messageDTO);
+            unitOfWork.Messages.Update(message);
+            await unitOfWork.SaveAsync();
+        }
+
+
+        public bool IsMessageExist(int id)
+        {
+            return unitOfWork.Messages.GetAll(m => m.Id == id).Any();
+        }        
     }
 }
