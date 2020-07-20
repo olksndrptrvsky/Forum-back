@@ -13,5 +13,7 @@ namespace BLL.Interfaces
         IdentityResult Register(string userName, string email, string password);
         Task<IEnumerable<string>> GetAllModers();
 
+        Task AddUserToModers(string username);
+
     }
 }

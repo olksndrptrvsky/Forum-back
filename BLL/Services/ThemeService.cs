@@ -110,6 +110,14 @@ namespace BLL.Services
         }
 
 
+
+        public int GetUnmoderatedThemeCount()
+        {
+            return unitOfWork.Themes.GetAll().Include(t => t.ThemeModers)
+                .Where(t => !t.ThemeModers.Any()).Count();
+        }
+
+
         private IEnumerable<ThemeListItemDTO> CreateThemeListItemDTOs(IQueryable<Theme> themes)
         {
             themes = themes.Include(t => t.Author);

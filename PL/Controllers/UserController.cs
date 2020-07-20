@@ -55,5 +55,15 @@ namespace PL.Controllers
             return (await userService.GetAllModers()).ToList();
         }
 
+        [Authorize(Roles = "Administrator")]
+        [HttpPost("addToModers")]
+        public async Task<IActionResult> AddUserToModers([FromBody]string username)
+        {
+            await userService.AddUserToModers(username);
+            return Ok();
+        }
+
+
+
     }
 }

@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using AutoMapper;
 using System.Linq;
+using DAL.Repositories;
 
 namespace BLL.Services
 {
@@ -98,7 +99,14 @@ namespace BLL.Services
         }
 
 
+        public async Task AddUserToModers(string username)
+        {
+            var user = await userManager.FindByNameAsync(username);
 
+            if (user == null) throw new ArgumentException($"There is no user with name `{username}`");
+
+            await userManager.AddToRoleAsync(user, "Moderator");
+        }
 
 
     }

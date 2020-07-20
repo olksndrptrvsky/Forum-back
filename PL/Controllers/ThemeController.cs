@@ -84,10 +84,22 @@ namespace PL.Controllers
 
         [Authorize(Roles = "Administrator")]
         [HttpGet("unmoderated/{pageNumber}")]
-        public IEnumerable<ThemeListItemDTO> GetUnmoderatedThemes(int pageNumber)
+        public ActionResult<IEnumerable<ThemeListItemDTO>> GetUnmoderatedThemes(int pageNumber)
         {
-            return themeService.GetThemesWithoutModers(pageNumber, pageSize);
+            var result = themeService.GetThemesWithoutModers(pageNumber, pageSize);
+            if (!result.Any()) return NotFound();
+            return Ok(result);
         }
+
+
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("unmoderatedCount")]
+        public int GetUnmoderatedThemeCount()
+        {
+            return themeService.GetUnmoderatedThemeCount();
+        }
+
+
 
         [Authorize(Roles = "Administrator")]
         [HttpPost("moder")]

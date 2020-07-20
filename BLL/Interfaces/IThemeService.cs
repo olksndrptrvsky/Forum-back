@@ -35,5 +35,8 @@ namespace BLL.Interfaces
 
         Task UpdateAsync(int id, ThemeDTO themeDTO);
 
+
+        int GetUnmoderatedThemeCount();
+
     }
 }
