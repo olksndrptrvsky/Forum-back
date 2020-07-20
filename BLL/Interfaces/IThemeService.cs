@@ -22,11 +22,18 @@ namespace BLL.Interfaces
 
         void AddModerToTheme(ThemeModerDTO themeModerDTO);
 
-        void DeleteTheme(int id);
+        Task DeleteTheme(int id);
 
         bool UserCanDeleteTheme(int userId, int themeId);
 
 
         IEnumerable<ThemeListItemDTO> SearchThemes(string search, int pagingNumber, int pagingSize);
+
+        bool IsThemeExist(int themeId);
+
+        bool UserIsAuthor(int themeId, int userId);
+
+        Task UpdateAsync(int id, ThemeDTO themeDTO);
+
     }
 }

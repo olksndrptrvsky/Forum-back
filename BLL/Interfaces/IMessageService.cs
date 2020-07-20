@@ -34,5 +34,7 @@ namespace BLL.Interfaces
 
         bool IsMessageExist(int id);
 
+        int GetPagesCountForTheme(int id, int pageSize);
+
     }
 }

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Security.Policy;
 
 namespace BLL.Services
 {
@@ -48,7 +49,9 @@ namespace BLL.Services
 
         public ThemeDTO GetThemeById(int themeId)
         {
-            var theme = unitOfWork.Themes.GetAll(th => th.Id == themeId).Include(th => th.Author).First();
+            var theme = unitOfWork.Themes.GetAll(th => th.Id == themeId).Include(th => th.Author).FirstOrDefault();
+            if (theme == null) return null;
+
             var themeDTO = mapper.Map<ThemeDTO>(theme);
            
             themeDTO.Author.MessageCount = messageService.GetMessageCountForUser(themeDTO.Author.Id);
@@ -95,19 +98,7 @@ namespace BLL.Services
             return createdthemeDTO;
         }
 
-        
-        public IEnumerable<ThemeListItemDTO> GetThemesByHashtag(string hashtagText, int pagingNumber, int pagingSize)
-        {
-            var hashtag = unitOfWork.Hashtags.GetAll(h => h.Text == hashtagText).FirstOrDefault();
-            if (hashtag == null) return null;
-
-            var themes = unitOfWork.ThemeHashtags.GetAll(th => th.HashtagId == hashtag.Id).
-                Join(unitOfWork.Themes.GetAll(), th => th.ThemeId, theme => theme.Id, (th, theme) => theme);
-            
-           
-            return CreateThemeListItemDTOs(themes).Skip((pagingNumber - 1) * pagingSize).Take(pagingSize);
-        }
-
+      
 
         public IEnumerable<ThemeListItemDTO> GetThemesWithoutModers(int pagingNumber, int pagingSize)
         {
@@ -137,15 +128,6 @@ namespace BLL.Services
         }
 
 
-        private IEnumerable<ThemeListItemDTO> SearchByTitle(string query, int pagingNumber, int pagingSize)
-        {
-            var themes = unitOfWork.Themes.GetAll(t => t.Title.StartsWith(query))
-                .Concat(unitOfWork.Themes.GetAll(t => t.Title.Contains(query))).Distinct();
-
-            return CreateThemeListItemDTOs(themes);
-        }
-
-
         public async void ReportTheme(ReportDTO report)
         {
             var reportTheme = mapper.Map<ReportTheme>(report);
@@ -172,18 +154,18 @@ namespace BLL.Services
         }
 
 
-       public bool UserCanDeleteTheme(int userId, int themeId)
+        public bool UserCanDeleteTheme(int userId, int themeId)
        {
             return unitOfWork.ThemeModers.GetAll(tm => tm.ModeratorId == userId && tm.ThemeId == themeId).Any() ||
                 unitOfWork.Themes.GetAll(t => t.Id == themeId && t.AuthorId == userId).Any();
        }
 
 
-
-
-        public void DeleteTheme(int id)
+        public async Task DeleteTheme(int id)
         {
+            var theme = unitOfWork.Themes.GetByIdAsync(id).Result;
             unitOfWork.Themes.Delete(id);
+            await SetHashtagsToTheme(theme, new List<string>());
             unitOfWork.SaveAsync().Wait();
         }
 
@@ -226,18 +208,6 @@ namespace BLL.Services
         {
             var theme = Expression.Parameter(typeof(Theme), "theme");
 
-
-            //Func<Theme, bool> del = theme => 
-            //{
-            //    var result = false;
-            //    foreach (var searchString in searchStrings)
-            //    {
-            //        result = result || theme.Title.Contains(searchString) || theme.Text.Contains(searchString);
-            //    }
-            //    return result;
-            //};
-
-
             Expression result = Expression.Constant(false);
 
             Expression title = Expression.Property(theme, "Title");
@@ -256,7 +226,71 @@ namespace BLL.Services
             return Expression.Lambda<Func<Theme, bool>>(result, new ParameterExpression[] { theme });
         }
 
+        public bool IsThemeExist(int themeId)
+        {
+            return unitOfWork.Themes.GetAll(t => t.Id == themeId).Any();
+        }
+
+        public bool UserIsAuthor(int themeId, int userId)
+        {
+            var theme = unitOfWork.Themes.GetAll(t => t.Id == themeId).FirstOrDefault();
+            return theme?.AuthorId == userId;
+        }
 
 
+        public async Task UpdateAsync(int id, ThemeDTO updatedTheme)
+        {
+            var theme = await unitOfWork.Themes.GetByIdAsync(id);
+            theme.Text = updatedTheme.Text;
+            theme.Title = updatedTheme.Title;
+            await SetHashtagsToTheme(theme, updatedTheme.Hashtags);
+            unitOfWork.Themes.Update(theme);
+            await unitOfWork.SaveAsync();
+        }
+
+
+        private async Task SetHashtagsToTheme(Theme theme, IEnumerable<string> newTags)
+        {
+            var oldTags = unitOfWork.ThemeHashtags.GetAll(th => th.ThemeId == theme.Id).Select(th => th.Hashtag.Text).ToList();
+            var toAdd = newTags.Except(oldTags);
+            var toDel = oldTags.Except(newTags);
+
+
+            foreach(var tag in toAdd)
+            {
+                var hashtag = unitOfWork.Hashtags.GetAll(h => h.Text == tag).FirstOrDefault();
+                if (hashtag == null)
+                {
+                    hashtag = await unitOfWork.Hashtags.CreateAsync(new Hashtag { Text = tag });
+                    await unitOfWork.SaveAsync();
+                }
+                await unitOfWork.ThemeHashtags.CreateAsync(new ThemeHashtag
+                {
+                    ThemeId = theme.Id,
+                    HashtagId = hashtag.Id
+                }
+                );
+            }
+
+
+            foreach (var tag in toDel)
+            {
+                var hashtag = unitOfWork.Hashtags.GetAll(h => h.Text == tag).FirstOrDefault();
+                var themeHashtag = unitOfWork.ThemeHashtags.GetAll(th => th.ThemeId == theme.Id && th.HashtagId == hashtag.Id);
+
+                unitOfWork.ThemeHashtags.Delete(theme.Id, hashtag.Id);
+                await unitOfWork.SaveAsync();
+
+                if (!unitOfWork.ThemeHashtags.GetAll(th => th.HashtagId == hashtag.Id).Any())
+                {
+                    unitOfWork.Hashtags.Delete(hashtag.Id);
+                }
+            }
+
+        }
+    
     }
+
+
+
 }

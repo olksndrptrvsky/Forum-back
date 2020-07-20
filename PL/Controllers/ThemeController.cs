@@ -34,17 +34,19 @@ namespace PL.Controllers
         }
 
         [HttpGet("latest/{pagingNumber}")]
-        public IEnumerable<ThemeListItemDTO> GetLatestThemes(int pagingNumber, string search)
+        public ActionResult<IEnumerable<ThemeListItemDTO>> GetLatestThemes(int pagingNumber)
         {
             var result = themeService.GetLatestThemes(pagingNumber, pageSize);
-            return result;
+            if (result.Any()) return Ok(result);
+            else return NotFound();
         }
 
         [HttpGet("popular/{pagingNumber}")]
-        public IEnumerable<ThemeListItemDTO> GetMostPopularThemes(int pagingNumber)
+        public ActionResult<IEnumerable<ThemeListItemDTO>> GetMostPopularThemes(int pagingNumber)
         {
             var result = themeService.GetPopularThemes(pagingNumber, pageSize);
-            return result;
+            if (result.Any()) return Ok(result);
+            else return NotFound();
         }
 
 
@@ -61,9 +63,11 @@ namespace PL.Controllers
 
 
         [HttpGet("{id}")]
-        public ThemeDTO GetTheme(int id)
+        public ActionResult<ThemeDTO> GetTheme(int id)
         {
-            return themeService.GetThemeById(id);
+            var theme = themeService.GetThemeById(id);
+            if (theme == null) return NotFound();
+            return Ok(theme);
         }
 
         [Authorize]
@@ -96,14 +100,32 @@ namespace PL.Controllers
 
         [Authorize(Roles = "Moderator, User")]
         [HttpDelete("{id}")]
-        public IActionResult DeleteTheme(int id)
+        public async Task<IActionResult> DeleteTheme(int id)
         {
             if (themeService.UserCanDeleteTheme(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value), id))
             {
-                themeService.DeleteTheme(id);
+                await themeService.DeleteTheme(id);
                 return NoContent();
             }
             return Unauthorized();
+        }
+
+
+        [Authorize(Roles = "User")]
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ThemeDTO>> UpdateTheme(int id, ThemeDTO theme)
+        {
+
+            if (!themeService.IsThemeExist(id))
+            {
+                return await CreateTheme(mapper.Map<CreateThemeVM>(theme));
+            }
+            if (!themeService.UserIsAuthor(id, Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value)))
+            {
+                return Unauthorized();
+            }
+            await themeService.UpdateAsync(id, theme);
+            return Ok();
         }
 
     }

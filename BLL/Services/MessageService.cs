@@ -178,7 +178,6 @@ namespace BLL.Services
             messageDTO.Id = id;
             var message = await unitOfWork.Messages.GetByIdAsync(id);
             message.Text = messageDTO.Text;
-            //message = mapper.Map<Message>(messageDTO);
             unitOfWork.Messages.Update(message);
             await unitOfWork.SaveAsync();
         }
@@ -188,5 +187,11 @@ namespace BLL.Services
         {
             return unitOfWork.Messages.GetAll(m => m.Id == id).Any();
         }        
+
+
+        public int GetPagesCountForTheme(int id, int pageSize)
+        {
+            return (unitOfWork.Messages.GetAll(m => m.ThemeId == id).Count() + pageSize - 1) / pageSize;
+        }
     }
 }

@@ -20,14 +20,16 @@ namespace PL.Controllers
     {
         private readonly IMapper mapper;
         private readonly IMessageService messageService;
+        private readonly IThemeService themeService;
         private readonly IConfiguration config;
         private readonly int pageSize;
 
 
-        public MessageController(IMapper mapper, IMessageService messageService, IConfiguration config)
+        public MessageController(IMapper mapper, IMessageService messageService, IThemeService themeService, IConfiguration config)
         {
             this.mapper = mapper;
             this.messageService = messageService;
+            this.themeService = themeService;
             this.config = config;
             pageSize = Convert.ToInt32(this.config["Paging:Size"]);
 
@@ -89,10 +91,23 @@ namespace PL.Controllers
             {
                 return await CreateMessage(mapper.Map<CreateMessageVM>(message));
             }
-            await messageService.UpdateAsync(id, mapper.Map<MessageDTO>(message));
+            await messageService.UpdateAsync(id, message);
             return Ok();
         }
 
+
+        [HttpGet("pageCount/{themeId}")]
+        public ActionResult<int> GetPageCountForTheme(int themeId)
+        {
+            if (themeService.GetThemeById(themeId) == null)
+            {
+                return BadRequest();
+            }
+            else 
+            {
+                return messageService.GetPagesCountForTheme(themeId, pageSize);
+            }
+        }
 
     }
 }

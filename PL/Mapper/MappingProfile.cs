@@ -44,7 +44,9 @@ namespace PL.Mapper
                 .ForMember(mes => mes.AuthorId, opt => opt.MapFrom(dto => dto.Author.Id));
             
             CreateMap<CreateMessageVM, MessageDTO>();
-            
+
+            CreateMap<CreateMessageVM, ThemeDTO>();
+
             CreateMap<AuthorDTO, User>();
 
             CreateMap<MessageDTO, CreateMessageVM>();

@@ -14,6 +14,6 @@ namespace DAL.Interfaces
         IQueryable<TEntity> GetAll(Expression<Func<TEntity, bool>> predicate);
         Task<TEntity> CreateAsync(TEntity item);
         void Update(TEntity item);
-        void Delete(int id);
+        void Delete(params object[] keyValues);
     }
 }

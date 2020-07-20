@@ -28,9 +28,9 @@ namespace DAL.Repositories
             return result.Entity;
         }
 
-        public void Delete(int id)
+        public void Delete(params object[] keyValues)
         {
-            TEntity item = _dbSet.Find(id);
+            TEntity item = _dbSet.Find(keyValues);
             if (item != null)
             {
                 _db.Remove(item);
