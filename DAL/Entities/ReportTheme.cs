@@ -12,7 +12,7 @@ namespace DAL.Entities
         public bool IsChecked { get; set; } = false;
         public int ThemeId { get; set; }
         public virtual Theme Theme { get; set; }
-        public int? ReporterId { get; set; }
+        public int ReporterId { get; set; }
         public virtual User Reporter { get; set; }
     }
 }

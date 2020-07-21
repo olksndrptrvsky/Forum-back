@@ -29,7 +29,8 @@ namespace PL.Mapper
 
             CreateMap<CreateThemeVM, ThemeDTO>();
 
-            CreateMap<ReportVM, ReportDTO>();
+            CreateMap<ReportVM, ReportDTO>()
+                .ForMember(reportDTO => reportDTO.Reporter, (opt) => opt.MapFrom(vm => new AuthorDTO()));
 
             CreateMap<ReportDTO, ReportTheme>()
                 .ForMember(reportTheme => reportTheme.ThemeId, opt => opt.MapFrom(dto => dto.EntityId));
@@ -51,6 +52,11 @@ namespace PL.Mapper
 
             CreateMap<MessageDTO, CreateMessageVM>();
 
+            CreateMap<ReportTheme, ReportDTO>()
+                .ForMember(reportDTO => reportDTO.EntityId, opt => opt.MapFrom(rt => rt.ThemeId));
+
+            CreateMap<ReportMessage, ReportDTO>()
+                .ForMember(reportDTO => reportDTO.EntityId, opt => opt.MapFrom(rt => rt.MessageId));
 
         }
     }

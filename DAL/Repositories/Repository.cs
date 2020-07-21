@@ -37,9 +37,9 @@ namespace DAL.Repositories
             }
         }
 
-        public ValueTask<TEntity> GetByIdAsync(int id)
+        public ValueTask<TEntity> GetByIdAsync(params object[] keyValues)
         {
-            return _dbSet.FindAsync(id);
+            return _dbSet.FindAsync(keyValues);
         }
 
         public IQueryable<TEntity> GetAll()

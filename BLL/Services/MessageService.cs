@@ -68,7 +68,7 @@ namespace BLL.Services
         public async void ReportMessage(ReportDTO report)
         {
             var reportMessage = mapper.Map<ReportMessage>(report);
-
+            reportMessage.Reporter = null;
             await unitOfWork.ReportMessages.CreateAsync(reportMessage);
 
             unitOfWork.SaveAsync().Wait();
@@ -79,8 +79,10 @@ namespace BLL.Services
         {
             var message = unitOfWork.Messages.GetAll(m => m.Id == messageId).FirstOrDefault();
 
-            return message?.AuthorId == userId ||
-                unitOfWork.ThemeModers.GetAll(tm => tm.ThemeId == message.ThemeId && tm.ModeratorId == userId).Any();
+
+            var isModer = unitOfWork.ThemeModers.GetAll(tm => tm.ThemeId == message.ThemeId && tm.ModeratorId == userId).Any();
+
+            return message?.AuthorId == userId || isModer;
         }
 
 
@@ -193,5 +195,50 @@ namespace BLL.Services
         {
             return (unitOfWork.Messages.GetAll(m => m.ThemeId == id).Count() + pageSize - 1) / pageSize;
         }
+
+
+        public IEnumerable<EntityReportDTO<MessageDTO>> GetReportedMessagesWithReports(int moderId)
+        {
+            IQueryable<int> themeIds = unitOfWork.ThemeModers.GetAll(tm => tm.ModeratorId == moderId)
+               .Include(tm => tm.Theme).Select(tm => tm.Theme.Id);
+
+            var result = unitOfWork.ReportMessages.GetAll()
+                .Include(rm => rm.Message).ThenInclude(m => m.Author).Include(rm => rm.Reporter)
+                .Where(rm => themeIds.Any(id => rm.Message.ThemeId == id) && !rm.IsChecked).ToList()
+                .GroupBy(rm => rm.Message.Id).Select(gr => new EntityReportDTO<MessageDTO>
+                {
+                    Entity = mapper.Map<MessageDTO>(gr.ToList()[0].Message),
+                    Reports = mapper.Map<IEnumerable<ReportDTO>>(gr.ToList())
+                }).ToList();
+
+            return result;
+        }
+
+        public bool IsModeratingMessageReport(int moderId, int reportId)
+        {
+            var themeId = unitOfWork.ReportMessages.GetAll(rm => rm.Id == reportId)
+                .Include(rm => rm.Message).First().Message.ThemeId;
+            return unitOfWork.ThemeModers.GetByIdAsync(themeId, moderId).Result != null;
+        }
+
+
+        public ReportDTO CheckReport(int reportId)
+        {
+            var report = unitOfWork.ReportMessages.GetByIdAsync(reportId).Result;
+
+            report.IsChecked = true;
+
+            unitOfWork.SaveAsync().Wait();
+
+            return mapper.Map<ReportDTO>(report);
+        }
+
+
+
+
+
+
+
     }
+
 }

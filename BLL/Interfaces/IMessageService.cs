@@ -36,5 +36,11 @@ namespace BLL.Interfaces
 
         int GetPagesCountForTheme(int id, int pageSize);
 
+        IEnumerable<EntityReportDTO<MessageDTO>> GetReportedMessagesWithReports(int moderId);
+
+        bool IsModeratingMessageReport(int moderId, int reportId);
+
+        ReportDTO CheckReport(int reportId);
+
     }
 }

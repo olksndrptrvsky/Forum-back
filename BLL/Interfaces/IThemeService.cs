@@ -38,5 +38,12 @@ namespace BLL.Interfaces
 
         int GetUnmoderatedThemeCount();
 
+
+        IEnumerable<EntityReportDTO<ThemeListItemDTO>> GetReportedThemesWithReports(int moderId);
+
+        bool IsModeratingThemeReport(int moderId, int reportId);
+
+        ReportDTO CheckReport(int reportId);
+
     }
 }

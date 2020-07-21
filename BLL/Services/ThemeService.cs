@@ -121,6 +121,7 @@ namespace BLL.Services
         private IEnumerable<ThemeListItemDTO> CreateThemeListItemDTOs(IQueryable<Theme> themes)
         {
             themes = themes.Include(t => t.Author);
+
             var themeDTOs = mapper.Map<IEnumerable<ThemeListItemDTO>>(themes);
 
             var messagesPerTheme = messageService.GetMessagesPerTheme();
@@ -140,6 +141,8 @@ namespace BLL.Services
         {
             var reportTheme = mapper.Map<ReportTheme>(report);
 
+            reportTheme.Reporter = null;
+            
             await unitOfWork.ReportThemes.CreateAsync(reportTheme);
 
             unitOfWork.SaveAsync().Wait();
@@ -296,9 +299,52 @@ namespace BLL.Services
             }
 
         }
-    
+
+
+        public IEnumerable<EntityReportDTO<ThemeListItemDTO>> GetReportedThemesWithReports(int moderId)
+        {
+            IQueryable<int> themeIds = unitOfWork.ThemeModers.GetAll(tm => tm.ModeratorId == moderId)
+                .Include(tm => tm.Theme).Select(tm => tm.Theme.Id);
+
+            var themes = unitOfWork.Themes.GetAll(t => themeIds.Any(id => id == t.Id));
+
+
+            var themeDTOs = CreateThemeListItemDTOs(themes);
+
+            var result = new List<EntityReportDTO<ThemeListItemDTO>>();
+
+
+
+            foreach (var theme in themeDTOs)
+            {
+                var uncheckedReports = unitOfWork.ReportThemes.GetAll(rt => rt.ThemeId == theme.Id && !rt.IsChecked)
+                    .Include(rt => rt.Reporter).ToList();
+                var reportDTOs = mapper.Map<IEnumerable<ReportDTO>>(uncheckedReports);
+                
+                result.Add(new EntityReportDTO<ThemeListItemDTO>() { Entity = theme, Reports = reportDTOs });
+            }
+            return result;
+        }
+
+        public bool IsModeratingThemeReport(int moderId, int reportId)
+        {
+            var themeId = unitOfWork.ReportThemes.GetByIdAsync(reportId).Result.ThemeId;
+            return unitOfWork.ThemeModers.GetByIdAsync(themeId, moderId).Result != null;
+        }
+
+
+        public ReportDTO CheckReport(int reportId)
+        {
+            var report = unitOfWork.ReportThemes.GetByIdAsync(reportId).Result;
+
+            report.IsChecked = true;
+
+            unitOfWork.SaveAsync().Wait();
+
+            return mapper.Map<ReportDTO>(report);
+        }
+         
+
+
     }
-
-
-
 }

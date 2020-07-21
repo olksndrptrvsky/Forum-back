@@ -108,6 +108,5 @@ namespace BLL.Services
             await userManager.AddToRoleAsync(user, "Moderator");
         }
 
-
     }
 }

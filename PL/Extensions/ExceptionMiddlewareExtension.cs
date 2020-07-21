@@ -27,7 +27,7 @@ namespace PL.Extensions
                         await context.Response.WriteAsync(new ErrorDetails
                         {
                             StatusCode = context.Response.StatusCode,
-                            Message = contextFeature.Error.Message
+                            Title = contextFeature.Error.Message
                         }.ToString());
                     }
                 });
