@@ -1,9 +1,7 @@
 ﻿using DAL.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace DAL.EF
 {
@@ -24,9 +22,7 @@ namespace DAL.EF
             
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-        }
+     
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

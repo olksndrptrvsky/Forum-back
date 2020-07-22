@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using BLL.DTO;
 using BLL.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -27,9 +24,9 @@ namespace PL.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<UserDTO>> Login([FromBody]UserLoginVM userLoginVM)
+        public async Task<ActionResult<UserDTO>> LoginAsync([FromBody]UserLoginVM userLoginVM)
         {
-            var user = await userService.LogIn(userLoginVM.UserName, userLoginVM.Password, config["Jwt:Key"]);
+            var user = await userService.LogInAsync(userLoginVM.UserName, userLoginVM.Password, config["Jwt:Key"]);
             if (user == null)
             {
                 return Unauthorized();
@@ -50,16 +47,16 @@ namespace PL.Controllers
 
         [Authorize(Roles = "Administrator")]
         [HttpGet("moders")]
-        public async Task<ActionResult<IEnumerable<string>>> GetModers()
+        public async Task<ActionResult<IEnumerable<string>>> GetModersAsync()
         {
-            return (await userService.GetAllModers()).ToList();
+            return Ok(await userService.GetAllModersAsync());
         }
 
         [Authorize(Roles = "Administrator")]
         [HttpPost("addToModers")]
-        public async Task<IActionResult> AddUserToModers([FromBody]string username)
+        public async Task<IActionResult> AddUserToModersAsync([FromBody]string username)
         {
-            await userService.AddUserToModers(username);
+            await userService.AddUserToModersAsync(username);
             return Ok();
         }
 

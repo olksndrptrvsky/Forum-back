@@ -7,9 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BLL.Services
@@ -65,13 +63,13 @@ namespace BLL.Services
             return unitOfWork.Messages.GetAll(mes => mes.ThemeId == themeId).Count();
         }
 
-        public async void ReportMessage(ReportDTO report)
+        public async Task ReportMessageAsync(ReportDTO report)
         {
             var reportMessage = mapper.Map<ReportMessage>(report);
             reportMessage.Reporter = null;
             await unitOfWork.ReportMessages.CreateAsync(reportMessage);
 
-            unitOfWork.SaveAsync().Wait();
+            await unitOfWork.SaveAsync();
         }
 
 
@@ -79,15 +77,13 @@ namespace BLL.Services
         {
             var message = unitOfWork.Messages.GetAll(m => m.Id == messageId).FirstOrDefault();
 
-
             var isModer = unitOfWork.ThemeModers.GetAll(tm => tm.ThemeId == message.ThemeId && tm.ModeratorId == userId).Any();
 
             return message?.AuthorId == userId || isModer;
         }
 
 
-        //Check cascade
-        public void DeleteMessage(int id)
+        public async Task DeleteMessageAsync(int id)
         {
             //delete replies
             foreach(var replyMessageId in unitOfWork.Messages.GetAll(m => m.ReplyMessageId == id).Select(m => m.Id))
@@ -95,7 +91,7 @@ namespace BLL.Services
                 unitOfWork.Messages.Delete(replyMessageId);
             }
             unitOfWork.Messages.Delete(id);
-            unitOfWork.SaveAsync().Wait();
+            await unitOfWork.SaveAsync();
         }
 
         public IEnumerable<MessageDTO> GetRepliesForMessage(int messageId, int pagingNumber, int pagingSize)
@@ -115,7 +111,6 @@ namespace BLL.Services
             var messagesPerUser = GetMessagesPerUser();
 
 
-            //TODO FIRST(cond)
             foreach(var messageDTO in messageDTOs)
             {
                 messageDTO.Author.MessageCount = messagesPerUser.First(x => x.EntityId == messageDTO.Author.Id).MessageCount;
@@ -128,27 +123,6 @@ namespace BLL.Services
             }
 
             return messageDTOs;
-        }
-
-
-
-
-        private MessageDTO CreateMessageDTOs(Message message)
-        {
-            if (message.Author == null)
-            {
-                var user = userManager.FindByIdAsync(message.AuthorId.ToString()).Result;
-            }
-
-            var messageDTO = mapper.Map<MessageDTO>(message);
-
-
-            messageDTO.Author.MessageCount = GetMessageCountForUser(message.AuthorId);
-
-            var repliesPerMessage = GetRepliesPerMessage();
-            messageDTO.HasReplies = repliesPerMessage.FirstOrDefault(rpm => rpm.EntityId == messageDTO.Id) != null;
-        
-            return messageDTO;
         }
 
 
@@ -168,16 +142,15 @@ namespace BLL.Services
         }
 
 
-        public async Task<MessageDTO> GetMessageAsync(int messageId)
+        public MessageDTO GetMessage(int messageId)
         {
-            var message = (await unitOfWork.Messages.GetByIdAsync(messageId));
-            return CreateMessageDTOs(message);
+            var message = unitOfWork.Messages.GetAll(m => m.Id == messageId);
+            return CreateMessageDTOs(message).FirstOrDefault();
         }
 
 
         public async Task UpdateAsync(int id, MessageDTO messageDTO)
         {
-            messageDTO.Id = id;
             var message = await unitOfWork.Messages.GetByIdAsync(id);
             message.Text = messageDTO.Text;
             unitOfWork.Messages.Update(message);
@@ -199,12 +172,12 @@ namespace BLL.Services
 
         public IEnumerable<EntityReportDTO<MessageDTO>> GetReportedMessagesWithReports(int moderId)
         {
-            IQueryable<int> themeIds = unitOfWork.ThemeModers.GetAll(tm => tm.ModeratorId == moderId)
+            IQueryable<int> moderatedThemeIds = unitOfWork.ThemeModers.GetAll(tm => tm.ModeratorId == moderId)
                .Include(tm => tm.Theme).Select(tm => tm.Theme.Id);
 
             var result = unitOfWork.ReportMessages.GetAll()
                 .Include(rm => rm.Message).ThenInclude(m => m.Author).Include(rm => rm.Reporter)
-                .Where(rm => themeIds.Any(id => rm.Message.ThemeId == id) && !rm.IsChecked).ToList()
+                .Where(rm => moderatedThemeIds.Any(id => rm.Message.ThemeId == id) && !rm.IsChecked).ToList()
                 .GroupBy(rm => rm.Message.Id).Select(gr => new EntityReportDTO<MessageDTO>
                 {
                     Entity = mapper.Map<MessageDTO>(gr.ToList()[0].Message),
@@ -222,21 +195,17 @@ namespace BLL.Services
         }
 
 
-        public ReportDTO CheckReport(int reportId)
+        public async Task<ReportDTO> CheckReportAsync(int reportId)
         {
-            var report = unitOfWork.ReportMessages.GetByIdAsync(reportId).Result;
+            var report = await unitOfWork.ReportMessages.GetByIdAsync(reportId);
 
             report.IsChecked = true;
 
-            unitOfWork.SaveAsync().Wait();
-
-            return mapper.Map<ReportDTO>(report);
+            var task = unitOfWork.SaveAsync();
+            var reportDTO = mapper.Map<ReportDTO>(report);
+            await task;
+            return reportDTO;
         }
-
-
-
-
-
 
 
     }

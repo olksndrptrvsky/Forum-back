@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Security.Policy;
 
 namespace BLL.Services
 {
@@ -38,7 +37,7 @@ namespace BLL.Services
             return CreateThemeListItemDTOs(themes);
         }
         
-        //rework 
+        
         public IEnumerable<ThemeListItemDTO> GetPopularThemes(int pagingNumber, int pagingSize)
         {
             var themes = unitOfWork.Themes.GetAll();
@@ -90,15 +89,14 @@ namespace BLL.Services
 
             await unitOfWork.SaveAsync();
 
-            //get created theme with author
+            
             createdTheme = unitOfWork.Themes.GetAll(th => th.Id == createdTheme.Id).Include(th => th.Author).First();
             var createdthemeDTO = mapper.Map<ThemeDTO>(createdTheme);
             createdthemeDTO.Author.MessageCount = messageService.GetMessageCountForUser(createdTheme.AuthorId.Value);
             
             return createdthemeDTO;
         }
-
-      
+ 
 
         public IEnumerable<ThemeListItemDTO> GetThemesWithoutModers(int pagingNumber, int pagingSize)
         {
@@ -137,7 +135,7 @@ namespace BLL.Services
         }
 
 
-        public async void ReportTheme(ReportDTO report)
+        public async Task ReportThemeAsync(ReportDTO report)
         {
             var reportTheme = mapper.Map<ReportTheme>(report);
 
@@ -145,23 +143,23 @@ namespace BLL.Services
             
             await unitOfWork.ReportThemes.CreateAsync(reportTheme);
 
-            unitOfWork.SaveAsync().Wait();
+            await unitOfWork.SaveAsync();
         }
 
-        public void AddModerToTheme(ThemeModerDTO themeModerDTO)
+        public async Task AddModerToThemeAsync(ThemeModerDTO themeModerDTO)
         {
-            var moder = userManager.FindByNameAsync(themeModerDTO.ModerUsername).Result;
+            var moder = userManager.FindByNameAsync(themeModerDTO.ModerUsername);
             var themeModer = mapper.Map<ThemeModer>(themeModerDTO);
 
-            if (moder == null)
+            if (await moder == null)
             {
                 throw new ArgumentException($"There is no user with username {themeModerDTO.ModerUsername}");
             }
             themeModer.ModeratorId = moder.Id;
 
-            unitOfWork.ThemeModers.CreateAsync(themeModer);
+            await unitOfWork.ThemeModers.CreateAsync(themeModer);
 
-            unitOfWork.SaveAsync().Wait();
+            await unitOfWork.SaveAsync();
         }
 
 
@@ -172,12 +170,12 @@ namespace BLL.Services
        }
 
 
-        public async Task DeleteTheme(int id)
+        public async Task DeleteThemeAsync(int id)
         {
-            var theme = unitOfWork.Themes.GetByIdAsync(id).Result;
+            var theme = unitOfWork.Themes.GetByIdAsync(id);
             unitOfWork.Themes.Delete(id);
-            await SetHashtagsToTheme(theme, new List<string>());
-            unitOfWork.SaveAsync().Wait();
+            await SetHashtagsToTheme(await theme, new List<string>());
+            await unitOfWork.SaveAsync();
         }
 
         public IEnumerable<ThemeListItemDTO> SearchThemes(string search, int pagingNumber, int pagingSize)
@@ -211,7 +209,7 @@ namespace BLL.Services
 
             }
 
-            return CreateThemeListItemDTOs(query).ToList();
+            return CreateThemeListItemDTOs(query);
         }
 
 
@@ -333,18 +331,16 @@ namespace BLL.Services
         }
 
 
-        public ReportDTO CheckReport(int reportId)
+        public async Task<ReportDTO> CheckReportAsync(int reportId)
         {
-            var report = unitOfWork.ReportThemes.GetByIdAsync(reportId).Result;
+            var report = await unitOfWork.ReportThemes.GetByIdAsync(reportId);
 
             report.IsChecked = true;
 
-            unitOfWork.SaveAsync().Wait();
+            await unitOfWork.SaveAsync();
 
             return mapper.Map<ReportDTO>(report);
         }
-         
-
 
     }
 }

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using BLL.DTO;
 using BLL.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PL.ViewModels;
 
@@ -37,22 +35,23 @@ namespace PL.Controllers
             return Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value);
         }
 
-
+        [Authorize]
         [HttpPost("theme")]
-        public IActionResult ReportTheme(ReportVM report)
+        public async Task<IActionResult> ReportThemeAsync(ReportVM report)
         {
             var reportDTO = mapper.Map<ReportDTO>(report);
             reportDTO.Reporter.Id = GetCurrentUserId();
-            themeService.ReportTheme(reportDTO);
+            await themeService.ReportThemeAsync(reportDTO);
             return NoContent();
         }
 
+        [Authorize]
         [HttpPost("message")]
-        public IActionResult ReportMessage(ReportVM report)
+        public async Task<IActionResult> ReportMessageAsync(ReportVM report)
         {
             var reportDTO = mapper.Map<ReportDTO>(report);
             reportDTO.Reporter.Id = GetCurrentUserId();
-            messageService.ReportMessage(reportDTO);
+            await messageService.ReportMessageAsync(reportDTO);
             return NoContent();
         }
 
@@ -75,22 +74,25 @@ namespace PL.Controllers
 
         [Authorize(Roles = "Moderator")]
         [HttpPatch("check/theme/{reportId}")]
-        public ActionResult CheckThemeReport(int reportId)
+        public async Task<IActionResult> CheckThemeReportAsync(int reportId)
         {
             var moderId = GetCurrentUserId();
             if (!themeService.IsModeratingThemeReport(moderId, reportId)) return Forbid();
-            themeService.CheckReport(reportId);
+            await themeService.CheckReportAsync(reportId);
             return Ok();
         }
 
 
         [Authorize(Roles = "Moderator")]
         [HttpPatch("check/message/{reportId}")]
-        public ActionResult CheckMessageReport(int reportId)
+        public async Task<IActionResult> CheckMessageReportAsync(int reportId)
         {
             var moderId = GetCurrentUserId();
-            if (!messageService.IsModeratingMessageReport(moderId, reportId)) return Forbid();
-            messageService.CheckReport(reportId);
+            if (!messageService.IsModeratingMessageReport(moderId, reportId))
+            {
+                return Forbid();
+            }
+            await messageService.CheckReportAsync(reportId);
             return Ok();
         }
 

@@ -1,8 +1,5 @@
 ﻿using BLL.DTO;
-using DAL.Entities;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BLL.Interfaces
@@ -16,19 +13,19 @@ namespace BLL.Interfaces
 
         int GetMessageCountForUser(int userId);
 
-        void ReportMessage(ReportDTO report);
+        Task ReportMessageAsync(ReportDTO report);
 
         bool UserCanDeleteMessage(int userId, int messageId);
 
 
-        void DeleteMessage(int id);
+        Task DeleteMessageAsync(int id);
 
 
         IEnumerable<MessageDTO> GetRepliesForMessage(int messageId, int pagingNumber, int pagingSize);
 
         Task<MessageDTO> CreateAsync(MessageDTO messageDTO, int authorId);
 
-        Task<MessageDTO> GetMessageAsync(int messageId);
+        MessageDTO GetMessage(int messageId);
 
         Task UpdateAsync(int id, MessageDTO messageDTO);
 
@@ -40,7 +37,7 @@ namespace BLL.Interfaces
 
         bool IsModeratingMessageReport(int moderId, int reportId);
 
-        ReportDTO CheckReport(int reportId);
+        Task<ReportDTO> CheckReportAsync(int reportId);
 
     }
 }

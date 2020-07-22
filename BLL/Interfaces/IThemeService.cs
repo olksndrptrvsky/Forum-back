@@ -1,7 +1,5 @@
 ﻿using BLL.DTO;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BLL.Interfaces
@@ -18,11 +16,11 @@ namespace BLL.Interfaces
 
         IEnumerable<ThemeListItemDTO> GetThemesWithoutModers(int pagingNumber, int pagingSize);
 
-        void ReportTheme(ReportDTO report);
+        Task ReportThemeAsync(ReportDTO report);
 
-        void AddModerToTheme(ThemeModerDTO themeModerDTO);
+        Task AddModerToThemeAsync(ThemeModerDTO themeModerDTO);
 
-        Task DeleteTheme(int id);
+        Task DeleteThemeAsync(int id);
 
         bool UserCanDeleteTheme(int userId, int themeId);
 
@@ -43,7 +41,7 @@ namespace BLL.Interfaces
 
         bool IsModeratingThemeReport(int moderId, int reportId);
 
-        ReportDTO CheckReport(int reportId);
+        Task<ReportDTO> CheckReportAsync(int reportId);
 
     }
 }

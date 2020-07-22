@@ -7,7 +7,6 @@ using AutoMapper;
 using BLL.DTO;
 using BLL.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PL.ViewModels;
@@ -35,22 +34,34 @@ namespace PL.Controllers
 
         }
 
+        private int GetCurrentUserId()
+        {
+            return Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        }
+
 
 
         [HttpGet("{themeId}/{pageNumber}")]
         public ActionResult<IEnumerable<MessageDTO>> GetMessageForTheme(int themeId, int pageNumber)
         {
-            return Ok(messageService.GetMessagesInTheme(themeId, pageNumber, pageSize));
+            if (!themeService.IsThemeExist(themeId)) return NotFound();
+            var messages = messageService.GetMessagesInTheme(themeId, pageNumber, pageSize);
+            if (!messages.Any() && pageNumber > 1)
+            {
+                return NotFound();
+            }
+            else
+                return Ok(messages);
         }
 
 
         [Authorize(Roles = "Moderator, User")]
         [HttpDelete("{id}")]
-        public IActionResult DeleteMessage(int id)
+        public async Task<IActionResult> DeleteMessageAsync(int id)
         {
-            if (messageService.UserCanDeleteMessage(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value), id))
+            if (messageService.UserCanDeleteMessage(GetCurrentUserId(), id))
             {
-                messageService.DeleteMessage(id);
+                await messageService.DeleteMessageAsync(id);
                 return NoContent();
             }
             return Unauthorized();
@@ -60,23 +71,35 @@ namespace PL.Controllers
         [HttpGet("{messageId}/replies/{page}")]
         public ActionResult<IEnumerable<MessageDTO>> GetReplies(int messageId, int page)
         {
-            return Ok(messageService.GetRepliesForMessage(messageId, page, pageSize));
+            var message = messageService.GetMessage(messageId);
+            if (message == null)
+            {
+                return NotFound();
+            }
+            var replies = messageService.GetRepliesForMessage(messageId, page, pageSize);
+            if (replies.Any())
+                return Ok(replies);
+            else 
+                return NotFound();
         }
 
 
         [HttpGet("{id}")]
-        public MessageDTO GetMessage(int id)
+        public ActionResult<MessageDTO> GetMessage(int id)
         {
-            return messageService.GetMessageAsync(id).Result;
+            var message = messageService.GetMessage(id);
+            if (message == null)
+                return NotFound();
+            else 
+                return message;
         }
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<MessageDTO>> CreateMessage(CreateMessageVM messageVM)
+        public async Task<ActionResult<MessageDTO>> CreateMessageAsync(CreateMessageVM messageVM)
         {
-            var createdMessage = await messageService.CreateAsync(
-                mapper.Map<MessageDTO>(messageVM),
-                Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value));
+            var createdMessage = await messageService
+                .CreateAsync(mapper.Map<MessageDTO>(messageVM), GetCurrentUserId());
             
             return CreatedAtAction(nameof(GetMessage), new { id = createdMessage.Id }, createdMessage);
         }
@@ -84,12 +107,12 @@ namespace PL.Controllers
 
         [Authorize(Roles = "User")]
         [HttpPut("{id}")]
-        public async Task<ActionResult<MessageDTO>> UpdateMessage(int id, MessageDTO message)
+        public async Task<ActionResult<MessageDTO>> UpdateMessageAsync(int id, MessageDTO message)
         {
 
             if (!messageService.IsMessageExist(id))
             {
-                return await CreateMessage(mapper.Map<CreateMessageVM>(message));
+                return await CreateMessageAsync(mapper.Map<CreateMessageVM>(message));
             }
             await messageService.UpdateAsync(id, message);
             return Ok();
@@ -99,13 +122,13 @@ namespace PL.Controllers
         [HttpGet("pageCount/{themeId}")]
         public ActionResult<int> GetPageCountForTheme(int themeId)
         {
-            if (themeService.GetThemeById(themeId) == null)
+            if (themeService.IsThemeExist(themeId))
             {
-                return BadRequest();
+                return messageService.GetPagesCountForTheme(themeId, pageSize);
             }
             else 
             {
-                return messageService.GetPagesCountForTheme(themeId, pageSize);
+                return BadRequest($"No theme with id={themeId}");
             }
         }
 

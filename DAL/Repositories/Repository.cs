@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -23,8 +21,7 @@ namespace DAL.Repositories
 
         public async Task<TEntity> CreateAsync(TEntity item)
         {
-            var result = await _dbSet.AddAsync(item);
-           
+            var result = await _dbSet.AddAsync(item);         
             return result.Entity;
         }
 

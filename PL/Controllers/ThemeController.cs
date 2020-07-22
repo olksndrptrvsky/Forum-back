@@ -7,12 +7,9 @@ using AutoMapper;
 using BLL.DTO;
 using BLL.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using PL.ViewModels;
-using System.Net;
-using DAL.Entities;
 
 namespace PL.Controllers
 {
@@ -32,6 +29,16 @@ namespace PL.Controllers
             this.mapper = mapper;
             pageSize = Convert.ToInt32(config["Paging:Size"]);
         }
+
+
+        private int GetCurrentUserId()
+        {
+            return Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        }
+
+
+
+
 
         [HttpGet("latest/{pagingNumber}")]
         public ActionResult<IEnumerable<ThemeListItemDTO>> GetLatestThemes(int pagingNumber)
@@ -72,11 +79,10 @@ namespace PL.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<ThemeDTO>> CreateTheme(CreateThemeVM themeVM)
+        public async Task<ActionResult<ThemeDTO>> CreateThemeAsync(CreateThemeVM themeVM)
         {
-            var createdTheme = await themeService.CreateAsync(
-                mapper.Map<ThemeDTO>(themeVM),
-                Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value));
+            var createdTheme = await themeService
+                .CreateAsync(mapper.Map<ThemeDTO>(themeVM), GetCurrentUserId());
             return CreatedAtAction(nameof(GetTheme), new { id = createdTheme.Id }, createdTheme);
         }
 
@@ -103,20 +109,20 @@ namespace PL.Controllers
 
         [Authorize(Roles = "Administrator")]
         [HttpPost("moder")]
-        public IActionResult AddModerToTheme(ThemeModerVM themeModerVM)
+        public async Task<IActionResult> AddModerToThemeAsync(ThemeModerVM themeModerVM)
         {
-            themeService.AddModerToTheme(mapper.Map<ThemeModerDTO>(themeModerVM));
+            await themeService.AddModerToThemeAsync(mapper.Map<ThemeModerDTO>(themeModerVM));
             return NoContent();
         }
 
 
         [Authorize(Roles = "Moderator, User")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTheme(int id)
+        public async Task<IActionResult> DeleteThemeAsync(int id)
         {
-            if (themeService.UserCanDeleteTheme(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value), id))
+            if (themeService.UserCanDeleteTheme(GetCurrentUserId(), id))
             {
-                await themeService.DeleteTheme(id);
+                await themeService.DeleteThemeAsync(id);
                 return NoContent();
             }
             return Unauthorized();
@@ -130,9 +136,9 @@ namespace PL.Controllers
 
             if (!themeService.IsThemeExist(id))
             {
-                return await CreateTheme(mapper.Map<CreateThemeVM>(theme));
+                return await CreateThemeAsync(mapper.Map<CreateThemeVM>(theme));
             }
-            if (!themeService.UserIsAuthor(id, Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier).Value)))
+            if (!themeService.UserIsAuthor(id, GetCurrentUserId()))
             {
                 return Unauthorized();
             }
